@@ -1,0 +1,175 @@
+1️⃣ Register a New User
+Method: POST
+URL: http://localhost:5000/api/auth/signup
+
+{
+  "name": "Saran",
+  "email": "saran@gmail.com",
+  "username": "saran",
+  "password": "password@123"
+}role:user
+{
+ "name": "Saran",
+  "email": "directBuilder@gmail.com",
+  "username": "directBuilder",
+  "password": "password@123"
+}
+{
+ "name": "Saran",
+  "email": "admin@gmail.com",
+  "username": "admin",
+  "password": "password@123"
+}
+{
+  _id: 67c526f7e871b776c356accc
+  "name": "Saran",
+  "email": "seller@gmail.com",
+  "username": "seller",
+  "password": "seller"
+}
+
+
+2️⃣ Login User
+Method: POST
+URL: http://localhost:5000/api/auth/login
+
+{
+  "identifier": "superAdmin",
+  "password": "password@123"
+}
+
+1️⃣ View All Users (Admin Only)
+Method: GET
+URL: http://localhost:5000/api/users/
+Headers:
+
+{
+  "Content-Type": "application/json",
+  "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2I4MDMwOWFjNjYzODkyZjM3YzZmZWUiLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3NDAxMTYwMjAsImV4cCI6MTc0MDExOTYyMH0.zOsT3gs0sXIepi6gqCG3YeGklNxv1xxS4TOdwqbr7CA"
+}
+
+
+2️⃣ Promote a User (Admin Only)
+Method: PATCH
+URL: http://localhost:5000/api/users/admin/promote/65af7d0e28a1d1f9f9b6b7f1
+(Replace 65af7d0e28a1d1f9f9b6b7f1 with a real user ID)
+
+Headers:
+{
+  "Content-Type": "application/json",
+  "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2I4MDMwOWFjNjYzODkyZjM3YzZmZWUiLCJyb2xlIjoiQWRtaW4iLCJpYXQiOjE3NDAxMTYwMjAsImV4cCI6MTc0MDExOTYyMH0.zOsT3gs0sXIepi6gqCG3YeGklNxv1xxS4TOdwqbr7CA"
+}
+
+Body (JSON):
+{
+  "newRole": "Admin"
+}
+
+
+---------------------------------------------------------------
+Method: POST
+URL: http://localhost:5000/api/leads/
+Headers:
+
+{
+  "Content-Type": "application/json",
+  "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+}
+Body (JSON):
+
+{
+  "property": "PROPERTY_ID",
+  "seller": "SELLER_ID",
+  "message": "I am interested in this property. Can we discuss?",
+  "offerPrice": 50000
+}
+
+Method: GET
+URL: http://localhost:5000/api/leads/seller
+Headers:
+{
+  "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+}
+
+Method: GET
+URL: http://localhost:5000/api/leads/buyer
+Headers:
+{
+  "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+}
+
+Update Lead Status (Only Seller or SuperAdmin)
+Method: PUT
+URL: http://localhost:5000/api/leads/LEAD_ID/status
+Headers:
+{
+  "Content-Type": "application/json",
+  "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+}
+Body (JSON):
+
+{
+  "status": "accepted"
+}
+
+Delete a Lead (Only Buyer or SuperAdmin)
+Method: DELETE
+URL: http://localhost:5000/api/leads/LEAD_ID
+Headers:
+{
+  "Authorization": "Bearer YOUR_ACCESS_TOKEN"
+}
+
+---------------------------------------------------
+
+import axios from 'axios';
+
+const handlePayment = async () => {
+  try {
+    // Step 1: Create order
+    const { data } = await axios.post(
+      '/api/transactions',
+      {
+        amount: 50000, // in INR
+        builderId: '682d91066314af6cbd021e80',
+        propertyId: '6837f58f41cf2faa935a7b9b'
+      },
+      { withCredentials: true } // if using cookies/token-based auth
+    );
+
+    const order = data.order;
+
+    // Step 2: Open Razorpay checkout
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Razorpay key
+      amount: order.amount, // in paise
+      currency: order.currency,
+      name: 'Your App Name',
+      description: 'Property Payment',
+      image: '/logo.png',
+      order_id: order.id,
+      handler: async (response) => {
+        // Step 3: Verify payment
+        const verifyRes = await axios.post(
+          '/api/transactions/verify',
+          {
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature
+          },
+          { withCredentials: true }
+        );
+
+        alert('Payment Verified: ' + verifyRes.data.message);
+      },
+      notes: order.notes,
+      theme: { color: '#3399cc' }
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  } catch (error) {
+    console.error('Payment Error:', error.response?.data || error.message);
+    alert('Payment failed');
+  }
+};
