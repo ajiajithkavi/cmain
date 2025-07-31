@@ -7,8 +7,8 @@ const locationAdvantageSchema = new mongoose.Schema({
 
 const floorPlanSchema = new mongoose.Schema({
   unit: [String],   // image URLs
-  clubhouse plans: [String],
-  master plans: [String]
+  clubhousePlans: [String],
+  masterplans: [String]
 }, { _id: false });
 
 const gallerySchema = new mongoose.Schema({
